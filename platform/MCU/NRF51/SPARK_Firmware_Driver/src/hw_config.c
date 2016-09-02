@@ -1,16 +1,16 @@
 /**
  Copyright (c) 2015 MidAir Technology, LLC.  All rights reserved.
- 
+
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU Lesser General Public
  License as published by the Free Software Foundation, either
  version 3 of the License, or (at your option) any later version.
- 
+
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  Lesser General Public License for more details.
- 
+
  You should have received a copy of the GNU Lesser General Public
  License along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
@@ -41,15 +41,27 @@ uint16_t Flash_Update_Index = 0;
 uint32_t External_Flash_Address = 0;
 uint32_t External_Flash_Start_Address = 0;
 
+// static void blink_led(int count)
+// {
+//     for (int i = 0; i < count; i++) {
+//         nrf_gpio_pin_set(0);
+//         nrf_delay_us(250000);
+//         nrf_gpio_pin_clear(0);
+//         nrf_delay_us(250000);
+//     }
+//     nrf_delay_us(500000);
+// }
+
 static void blink_led(int count)
 {
-    for (int i = 0; i < count; i++) {
-        nrf_gpio_pin_set(0);
-        nrf_delay_us(250000);
-        nrf_gpio_pin_clear(0);
-        nrf_delay_us(250000);
-    }
-    nrf_delay_us(500000);
+	for (int i = 0; i < count; i++) {
+		nrf_gpio_pin_set(GATEWAY_NOTIFICATION_LED);
+		nrf_delay_us(100000);
+		nrf_gpio_pin_clear(GATEWAY_NOTIFICATION_LED);
+		nrf_delay_us(100000);
+	}
+	// nrf_delay_us(300000);
+	nrf_delay_us(100000);
 }
 
 void tick_system_seconds(void)
@@ -83,55 +95,64 @@ uint32_t system_micros(void)
  */
 void app_error_handler(uint32_t error_code, uint32_t line_num, const uint8_t * p_file_name)
 {
-    DEBUG("Hit an app error of code %d", error_code);
-    DEBUG("Error happened on line number %d in file %s", line_num, p_file_name);
-    LED_SetRGBColor(RGB_COLOR_RED);
+    blink_led(5);
 
-    nrf_drv_wdt_channel_feed(m_channel_id);
-    //this will stop all timers, so we need to feed the WDT here
-    for (int i=0; i<APP_TIMER_MAX_TIMERS; i++) app_timer_stop(i);
-
-    nrf_gpio_pin_set(0);
-    for (int count = 0; count < 2; count++) {
-        //SOS Call
-        for (int i = 0; i < 3; i++) {
-            LED_On(LED_RGB);
-            nrf_delay_ms(100);
-            LED_Off(LED_RGB);
-            nrf_delay_ms(100);
-            nrf_drv_wdt_channel_feed(m_channel_id);
-        }
-        nrf_delay_ms(250);
-        for (int i = 0; i < 3; i++) {
-            LED_On(LED_RGB);
-            nrf_delay_ms(250);
-            LED_Off(LED_RGB);
-            nrf_delay_ms(250);
-            nrf_drv_wdt_channel_feed(m_channel_id);
-        }
-        nrf_delay_ms(250);
-        for (int i = 0; i < 3; i++) {
-            LED_On(LED_RGB);
-            nrf_delay_ms(100);
-            LED_Off(LED_RGB);
-            nrf_delay_ms(100);
-            nrf_drv_wdt_channel_feed(m_channel_id);
-        }
-        nrf_delay_ms(1000);
-        for (int i = 0; i < error_code; i++) {
-            LED_On(LED_RGB);
-            nrf_delay_ms(250);
-            LED_Off(LED_RGB);
-            nrf_delay_ms(250);
-            nrf_drv_wdt_channel_feed(m_channel_id);
-        }
-        nrf_delay_ms(2000);
-        nrf_drv_wdt_channel_feed(m_channel_id);
-    }
-    
-    
-    // On assert, the system can only recover with a reset.
-    NVIC_SystemReset();
+    // DEBUG("Hit an app error of code %d", error_code);
+    // DEBUG("Error happened on line number %d in file %s", line_num, p_file_name);
+    //
+    char msg[64];
+  	snprintf(msg, 64, "Hit an app error of code = %lu\n", (unsigned long)error_code);
+  	debugHelper(msg);
+  	snprintf(msg, 64, "Error happened on line number %lu in file %s", (unsigned long)line_num, p_file_name);
+  	debugHelper(msg);
+    //
+    // LED_SetRGBColor(RGB_COLOR_RED);
+    //
+    // nrf_drv_wdt_channel_feed(m_channel_id);
+    // //this will stop all timers, so we need to feed the WDT here
+    // for (int i=0; i<APP_TIMER_MAX_TIMERS; i++) app_timer_stop(i);
+    //
+    // nrf_gpio_pin_set(0);
+    // for (int count = 0; count < 2; count++) {
+    //     //SOS Call
+    //     for (int i = 0; i < 3; i++) {
+    //         LED_On(LED_RGB);
+    //         nrf_delay_ms(100);
+    //         LED_Off(LED_RGB);
+    //         nrf_delay_ms(100);
+    //         nrf_drv_wdt_channel_feed(m_channel_id);
+    //     }
+    //     nrf_delay_ms(250);
+    //     for (int i = 0; i < 3; i++) {
+    //         LED_On(LED_RGB);
+    //         nrf_delay_ms(250);
+    //         LED_Off(LED_RGB);
+    //         nrf_delay_ms(250);
+    //         nrf_drv_wdt_channel_feed(m_channel_id);
+    //     }
+    //     nrf_delay_ms(250);
+    //     for (int i = 0; i < 3; i++) {
+    //         LED_On(LED_RGB);
+    //         nrf_delay_ms(100);
+    //         LED_Off(LED_RGB);
+    //         nrf_delay_ms(100);
+    //         nrf_drv_wdt_channel_feed(m_channel_id);
+    //     }
+    //     nrf_delay_ms(1000);
+    //     for (int i = 0; i < error_code; i++) {
+    //         LED_On(LED_RGB);
+    //         nrf_delay_ms(250);
+    //         LED_Off(LED_RGB);
+    //         nrf_delay_ms(250);
+    //         nrf_drv_wdt_channel_feed(m_channel_id);
+    //     }
+    //     nrf_delay_ms(2000);
+    //     nrf_drv_wdt_channel_feed(m_channel_id);
+    // }
+    //
+    //
+    // // On assert, the system can only recover with a reset.
+    // NVIC_SystemReset();
 }
 
 uint32_t OTA_FlashAddress()
@@ -150,7 +171,7 @@ uint16_t FLASH_GetDeviceInt(void)
 {
     uint8_t byte1 = sFLASH_ReadSingleByte(FLASH_DEVICE_INT);
     uint8_t byte2 = sFLASH_ReadSingleByte(FLASH_DEVICE_INT+0x01);
-    
+
     return (byte1 << 8)  |  byte2;
 }
 
@@ -226,7 +247,7 @@ uint16_t FLASH_Update(const uint8_t *pBuffer, uint32_t address, uint32_t bufferS
 void FLASH_End(void)
 {
     const module_info_t* module_info = FLASH_ModuleInfo(FLASH_SERIAL, FLASH_FW_ADDRESS);
-    
+
     if (module_info != NULL) {
         uint32_t fw_len = (uint32_t)(External_Flash_Address - External_Flash_Start_Address);
         if (module_info->module_function==MODULE_FUNCTION_BOOTLOADER) {
@@ -262,7 +283,7 @@ void leds_init(void)
     nrf_gpio_cfg_output(RGB_LED_PIN_RED);
     nrf_gpio_cfg_output(RGB_LED_PIN_GREEN);
     nrf_gpio_cfg_output(RGB_LED_PIN_BLUE);
-    
+
     nrf_gpio_pin_set(RGB_LED_PIN_RED);
     nrf_gpio_pin_set(RGB_LED_PIN_GREEN);
     nrf_gpio_pin_set(RGB_LED_PIN_BLUE);
@@ -277,16 +298,16 @@ void timers_init(void)
     APP_TIMER_INIT(APP_TIMER_PRESCALER, APP_TIMER_MAX_TIMERS, APP_TIMER_OP_QUEUE_SIZE, false);
     err_code = app_timer_create(&millis_timer, APP_TIMER_MODE_REPEATED, millis_timer_timeout);
     APP_ERROR_CHECK(err_code);
-    
+
     //start a Timer for uSec resolution
     //TO DO - Do we want this? It keeps the HFCLK running which crushes battery life. Current implentation uses LFCLK
 //    micros_timer.p_reg = NRF_TIMER1;
 //    micros_timer.irq = TIMER1_IRQn;
 //    micros_timer.instance_id = TIMER1_INSTANCE_INDEX;
-//    
+//
 //    err_code = nrf_drv_timer_init(&micros_timer, NULL, micros_timer_timeout);
 //    APP_ERROR_CHECK(err_code);
-//    
+//
 //    uint32_t time_ticks =  nrf_drv_timer_us_to_ticks(&micros_timer, 100);
 //    DEBUG("System Ticks per millisecond: %d", time_ticks);
 //
@@ -307,7 +328,7 @@ void buttons_init(void)
 //    {
 //        {BOARD_BUTTON, false, BUTTON_PULL, button_event_handler}
 //    };
-//    
+//
 //    APP_BUTTON_INIT(buttons, sizeof(buttons) / sizeof(buttons[0]), BUTTON_DETECTION_DELAY, true);
 }
 
@@ -347,7 +368,7 @@ void device_manager_init(void)
     dm_init_param_t         init_data;
     dm_application_param_t  register_param;
     bool                	bonds_delete = false;
-    
+
     // Initialize peer device handle.
     err_code = dm_handle_initialize(&m_bonded_peer_handle);
     APP_ERROR_CHECK(err_code);
@@ -368,7 +389,7 @@ void device_manager_init(void)
     APP_ERROR_CHECK(err_code);
     //blink(4);
     memset(&register_param.sec_param, 0, sizeof(ble_gap_sec_params_t));
-    
+
     register_param.sec_param.bond         = SEC_PARAM_BOND;
     register_param.sec_param.mitm         = SEC_PARAM_MITM;
     register_param.sec_param.io_caps      = SEC_PARAM_IO_CAPABILITIES;
@@ -386,7 +407,7 @@ void device_manager_init(void)
     //bluz-gw
     register_param.service_type           = DM_PROTOCOL_CNTXT_GATT_CLI_ID;
 #endif
-    
+
     err_code = dm_register(&m_app_handle, &register_param);
     //blink(5);
     APP_ERROR_CHECK(err_code);
@@ -408,21 +429,21 @@ void gap_params_init(void)
     uint32_t                err_code;
     ble_gap_conn_params_t   gap_conn_params;
     ble_gap_conn_sec_mode_t sec_mode;
-    
+
     BLE_GAP_CONN_SEC_MODE_SET_OPEN(&sec_mode);
 
     err_code = sd_ble_gap_device_name_set(&sec_mode,
                                           (const uint8_t *)DEVICE_NAME,
                                           strlen(DEVICE_NAME));
     APP_ERROR_CHECK(err_code);
-    
+
     memset(&gap_conn_params, 0, sizeof(gap_conn_params));
-    
+
     gap_conn_params.min_conn_interval = MIN_CONN_INTERVAL;
     gap_conn_params.max_conn_interval = MAX_CONN_INTERVAL;
     gap_conn_params.slave_latency     = SLAVE_LATENCY;
     gap_conn_params.conn_sup_timeout  = CONN_SUP_TIMEOUT;
-    
+
     err_code = sd_ble_gap_ppcp_set(&gap_conn_params);
     APP_ERROR_CHECK(err_code);
 }
@@ -433,9 +454,9 @@ void conn_params_init(void)
 {
     uint32_t               err_code;
     ble_conn_params_init_t cp_init;
-    
+
     memset(&cp_init, 0, sizeof(cp_init));
-    
+
     cp_init.p_conn_params                  = NULL;
     cp_init.first_conn_params_update_delay = FIRST_CONN_PARAMS_UPDATE_DELAY;
     cp_init.next_conn_params_update_delay  = NEXT_CONN_PARAMS_UPDATE_DELAY;
@@ -444,7 +465,7 @@ void conn_params_init(void)
     cp_init.disconnect_on_fail             = false;
     cp_init.evt_handler                    = NULL;
     cp_init.error_handler                  = conn_params_error_handler;
-    
+
     err_code = ble_conn_params_init(&cp_init);
     APP_ERROR_CHECK(err_code);
 }
@@ -535,9 +556,9 @@ void services_init(void)
 {
     uint32_t err_code;
     scs_init_t init;
-    
+
     init.data_write_handler = data_write_handler;
-    
+
     err_code = scs_init(&m_scs, &init);
     APP_ERROR_CHECK(err_code);
 }
@@ -547,20 +568,20 @@ void advertising_init(void)
     uint32_t      err_code;
     ble_advdata_t advdata;
     ble_advdata_t scanrsp;
-    
+
     ble_uuid_t adv_uuids[] = {{BLE_SCS_UUID_SERVICE, m_scs.uuid_type}};
-    
+
     // Build and set advertising data
     memset(&advdata, 0, sizeof(advdata));
-    
+
     advdata.name_type               = BLE_ADVDATA_FULL_NAME;
     advdata.include_appearance      = true;
     advdata.flags                   = BLE_GAP_ADV_FLAGS_LE_ONLY_GENERAL_DISC_MODE;
-    
+
     memset(&scanrsp, 0, sizeof(scanrsp));
     scanrsp.uuids_complete.uuid_cnt = sizeof(adv_uuids) / sizeof(adv_uuids[0]);
     scanrsp.uuids_complete.p_uuids  = adv_uuids;
-    
+
     err_code = ble_advdata_set(&advdata, &scanrsp);
     APP_ERROR_CHECK(err_code);
 }
@@ -572,19 +593,19 @@ void advertising_init(void)
 void advertising_start(void)
 {
     uint32_t             err_code;
-    
+
     if (state != BLE_ADVERTISING) {
         ble_gap_adv_params_t adv_params;
-        
+
         // Start advertising
         memset(&adv_params, 0, sizeof(adv_params));
-        
+
         adv_params.type        = BLE_GAP_ADV_TYPE_ADV_IND;
         adv_params.p_peer_addr = NULL;
         adv_params.fp          = BLE_GAP_ADV_FP_ANY;
         adv_params.interval    = APP_ADV_INTERVAL;
         adv_params.timeout     = APP_ADV_NO_TIMEOUT;
-        
+
         err_code = sd_ble_gap_adv_start(&adv_params);
         APP_ERROR_CHECK(err_code);
         state = BLE_ADVERTISING;
@@ -625,7 +646,7 @@ void power_manage(void)
 {
 //    uint32_t err_code = timers_stop();
 //    APP_ERROR_CHECK(err_code);
-//    
+//
 //    sd_nvic_ClearPendingIRQ(RTC1_IRQn);
 //    nrf_drv_timer_disable(&micros_timer);
     uint32_t err_code = sd_app_evt_wait();
@@ -651,7 +672,7 @@ void FLASH_WriteProtection_Enable(uint32_t FLASH_Sectors)
 
 void FLASH_WriteProtection_Disable(uint32_t FLASH_Sectors)
 {
-    
+
 }
 
 static uint32_t crc32_tab[] = {
@@ -704,10 +725,9 @@ uint32_t Compute_CRC32(uint32_t crc, const uint8_t* buf, size_t size)
 {
     const uint8_t *p = buf;
     crc = crc ^ ~0U;
-    
+
     while (size--)
         crc = crc32_tab[(crc ^ *p++) & 0xFF] ^ (crc >> 8);
-    
+
     return crc ^ ~0U;
 }
-

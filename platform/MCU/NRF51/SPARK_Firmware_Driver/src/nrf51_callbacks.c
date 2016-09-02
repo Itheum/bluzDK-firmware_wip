@@ -127,7 +127,7 @@ void on_ble_evt(ble_evt_t * p_ble_evt)
   //    static ble_gap_evt_auth_status_t m_auth_status;
   //    ble_gap_enc_info_t *             p_enc_info;
 
-	// char msg[64];
+	char msg[64];
 	// snprintf(msg, 64, "******** A n_c on_ble_evt evt_id %d ", p_ble_evt->header.evt_id);
 	// debugHelper(msg);
 
@@ -248,11 +248,6 @@ void on_ble_evt(ble_evt_t * p_ble_evt)
               !isCloudUpdating &&
               system_millis() - lastConnectionTime > TIME_BETWEEN_CONNECTIONS)
         {
-          //blink_led(10);
-
-			    // snprintf(msg, 64, "******** D n_c - DK Found");
-			    // debugHelper(msg);
-
           err_code = sd_ble_gap_scan_stop();
           state = BLE_OFF;
           if (err_code != NRF_SUCCESS)
@@ -266,18 +261,19 @@ void on_ble_evt(ble_evt_t * p_ble_evt)
                                             &m_scan_param,
                                             &connection_param);
 
-          if (err_code != NRF_SUCCESS)
+					if (err_code != NRF_SUCCESS)
           {
             APP_ERROR_CHECK(err_code);
           }
 					else {
-						// snprintf(msg, 64, "******** E n_c - DK Connected");
-				    // debugHelper(msg);
+						snprintf(msg, 64, "\n******** DK Connected\n");
+				    debugHelper(msg);
 					}
         }
         else {
           // Verify if short or complete name matches Weight Scale.
-          target = "A&D_UA-651BLE_5FAB91";
+          target = "A&D_UA-651BLE_5FAB91"; // home
+          // target = "A&D_UA-651BLE_01109E";
 
           if ((err_code == NRF_SUCCESS) &&
 					     (0 == memcmp(target,type_data.p_data,type_data.data_len)) &&
@@ -285,11 +281,6 @@ void on_ble_evt(ble_evt_t * p_ble_evt)
                !isCloudUpdating &&
                system_millis() - lastConnectionTime > TIME_BETWEEN_CONNECTIONS)
           {
-            // blink_led(5);
-
-						// snprintf(msg, 64, "******** D n_c - BP Found");
-				    // debugHelper(msg);
-
             err_code = sd_ble_gap_scan_stop();
             state = BLE_OFF;
             if (err_code != NRF_SUCCESS)
@@ -303,13 +294,14 @@ void on_ble_evt(ble_evt_t * p_ble_evt)
                                               &m_scan_param,
                                               &connection_param);
 
-            if (err_code != NRF_SUCCESS)
+
+						if (err_code != NRF_SUCCESS)
             {
 			        APP_ERROR_CHECK(err_code);
             }
 						else {
-							// snprintf(msg, 64, "******** E n_c - BP Connected");
-					    // debugHelper(msg);
+							snprintf(msg, 64, "\n******** BP Connected\n");
+					    debugHelper(msg);
 						}
 		      }
         }
@@ -438,12 +430,18 @@ uint32_t device_manager_evt_handler(dm_handle_t const    * p_handle,
                                            dm_event_t const     * p_event,
                                            ret_code_t           event_result)
 {
-    APP_ERROR_CHECK(event_result);
+		char msg[64];
+		snprintf(msg, 64, "\n******** device_manager_evt_handler\n");
+		debugHelper(msg);
+
+		APP_ERROR_CHECK(event_result);
 
     switch(p_event->event_id)
     {
         case DM_EVT_DEVICE_CONTEXT_LOADED: // Fall through.
         case DM_EVT_SECURITY_SETUP_COMPLETE:
+						snprintf(msg, 64, "\n******** A\n");
+						debugHelper(msg);
             m_bonded_peer_handle = (*p_handle);
             break;
 #if PLATFORM_ID==269
@@ -451,6 +449,10 @@ uint32_t device_manager_evt_handler(dm_handle_t const    * p_handle,
         case DM_EVT_CONNECTION:
             err_code = client_handling_create(p_handle, p_event->event_param.p_gap_param->conn_handle);
             APP_ERROR_CHECK(err_code);
+
+						snprintf(msg, 64, "\n******** B = %lu\n", (unsigned long)err_code);
+						debugHelper(msg);
+
             m_peer_count++;
             if (m_peer_count < MAX_CLIENTS)
             {
@@ -458,6 +460,8 @@ uint32_t device_manager_evt_handler(dm_handle_t const    * p_handle,
             }
             break;
         case DM_EVT_DISCONNECTION:
+						snprintf(msg, 64, "\n******** C\n");
+						debugHelper(msg);
             nrf_gpio_pin_clear(GATEWAY_NOTIFICATION_LED);
 
             err_code = client_handling_destroy(p_handle);
@@ -471,7 +475,9 @@ uint32_t device_manager_evt_handler(dm_handle_t const    * p_handle,
             break;
         case DM_EVT_SECURITY_SETUP:
         {
-            dm_handle_t handle = (*p_handle);
+						snprintf(msg, 64, "\n******** D\n");
+						debugHelper(msg);
+						dm_handle_t handle = (*p_handle);
             // Slave securtiy request received from peer, if from a non bonded device,
             // initiate security setup, else, wait for encryption to complete.
             err_code = dm_security_setup_req(&handle);
@@ -479,11 +485,17 @@ uint32_t device_manager_evt_handler(dm_handle_t const    * p_handle,
             break;
         }
         case DM_EVT_LINK_SECURED:
+						snprintf(msg, 64, "\n******** E\n");
+						debugHelper(msg);
             break;
         case DM_EVT_DEVICE_CONTEXT_STORED:
+						snprintf(msg, 64, "\n******** F\n");
+						debugHelper(msg);
             APP_ERROR_CHECK(event_result);
             break;
         case DM_EVT_DEVICE_CONTEXT_DELETED:
+						snprintf(msg, 64, "\n******** G\n");
+						debugHelper(msg);
             APP_ERROR_CHECK(event_result);
             break;
 #endif

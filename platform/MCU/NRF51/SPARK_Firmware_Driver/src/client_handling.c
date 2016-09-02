@@ -28,8 +28,8 @@
 #define BLE_SCS_UUID_SERVICE 0x0223
 #define BLE_SCS_UUID_DATA_DN_CHAR 0x0224
 #define BLE_SCS_UUID_DATA_UP_CHAR 0x0225
-#define BLE_WGT_UUID_SERVICE 0x1810
-#define BLE_WGT_UUID_DATA_UP_CHAR 0x2A35
+// #define BLE_WGT_UUID_SERVICE 0x1810
+// #define BLE_WGT_UUID_DATA_UP_CHAR 0x2A35
 
 #define RX_BUFFER_SIZE 					  512
 
@@ -62,7 +62,7 @@ typedef struct
 
 static client_t         m_client[MAX_CLIENTS];      /**< Client context information list. */
 static uint8_t          m_client_count;             /**< Number of clients. */
-static uint8_t          m_base_uuid_type;           /**< UUID type. */
+// static uint8_t          m_base_uuid_type;           /**< UUID type. */
 
 static void blink_led(int count)
 {
@@ -186,7 +186,8 @@ static void notif_enable(client_t * p_client)
 
     p_client->state = STATE_NOTIF_ENABLE;
 
-    buf[0] = BLE_GATT_HVX_NOTIFICATION;
+    // buf[0] = BLE_GATT_HVX_NOTIFICATION;
+    buf[0] = BLE_GATT_HVX_INDICATION;
     buf[1] = 0;
 
     write_params.write_op = BLE_GATT_OP_WRITE_REQ;
@@ -198,9 +199,12 @@ static void notif_enable(client_t * p_client)
     err_code = sd_ble_gattc_write(p_client->srv_db.conn_handle, &write_params);
     APP_ERROR_CHECK(err_code);
 
-    // char msg[64];
-    // snprintf(msg, 64, "******** c_h - notif_enable - err_code = %lu\n", (unsigned long)err_code);
-    // debugHelper(msg);
+    char msg[64];
+    snprintf(msg, 64, "\n******** notif_enable done - err_code = %lu, hd %X\n", (unsigned long)err_code, p_client->srv_db.services[0].charateristics[p_client->dn_char_index].cccd_handle);
+    debugHelper(msg);
+
+    snprintf(msg, 64, "\n******** char.uuid. %X\n", p_client->srv_db.services[0].charateristics[p_client->dn_char_index].characteristic.uuid.uuid);
+    debugHelper(msg);
 }
 
 
@@ -305,9 +309,19 @@ static void db_discovery_evt_handler(ble_db_discovery_evt_t * p_evt)
 
   if (p_evt->evt_type == BLE_DB_DISCOVERY_COMPLETE)
   {
-    // blink_led(3);
+    char msg[64];
+    snprintf(msg, 64, "\n******** db_discovery_evt_handler %d\n", p_evt->params.discovered_db.char_count);
+    debugHelper(msg);
+
+    // snprintf(msg, 64, "\n******** T %d %d %d %d %d %d %d \n", BLE_GATTC_EVT_WRITE_RSP, BLE_GATTS_EVT_WRITE, BLE_GATTC_EVT_HVX, BLE_GATTC_EVT_TIMEOUT, BLE_EVT_TX_COMPLETE, BLE_GAP_EVT_DISCONNECTED, BLE_GAP_EVT_CONNECTED);
+    // snprintf(msg, 64, "\n******** T %d %d %d %d %d %d %d %d %d %d %d \n", BLE_GATTC_EVT_PRIM_SRVC_DISC_RSP, BLE_GATTC_EVT_REL_DISC_RSP, BLE_GATTC_EVT_CHAR_DISC_RSP, BLE_GATTC_EVT_DESC_DISC_RSP, BLE_GATTC_EVT_CHAR_VAL_BY_UUID_READ_RSP, BLE_GATTC_EVT_READ_RSP, BLE_GATTC_EVT_CHAR_VALS_READ_RSP, BLE_GATTS_EVT_RW_AUTHORIZE_REQUEST, BLE_GATTS_EVT_SYS_ATTR_MISSING, BLE_GATTS_EVT_HVC, BLE_GATTS_EVT_TIMEOUT);
+    // debugHelper(msg);
     //
-    // char msg[64];
+    // snprintf(msg, 64, "\n******** T %d %d %d %d %d %d %d %d %d %d %d %d \n", SD_BLE_GATTS_SERVICE_ADD, SD_BLE_GATTS_INCLUDE_ADD, SD_BLE_GATTS_CHARACTERISTIC_ADD, SD_BLE_GATTS_DESCRIPTOR_ADD, SD_BLE_GATTS_VALUE_SET, SD_BLE_GATTS_VALUE_GET, SD_BLE_GATTS_HVX, SD_BLE_GATTS_SERVICE_CHANGED, SD_BLE_GATTS_RW_AUTHORIZE_REPLY, SD_BLE_GATTS_SYS_ATTR_SET, SD_BLE_GATTS_SYS_ATTR_GET, BLE_GATTS_EVT_SC_CONFIRM);
+    // debugHelper(msg);
+    //
+    // snprintf(msg, 64, "\n******** BLE_UUID_BLOOD_PRESSURE_MEASUREMENT_CHAR. %X\n",BLE_UUID_BLOOD_PRESSURE_MEASUREMENT_CHAR);
+    // debugHelper(msg);
     // snprintf(msg, 64, "******** We are in disc_comp type %d.", p_evt->evt_type);
     // debugHelper(msg);
     //
@@ -324,45 +338,42 @@ static void db_discovery_evt_handler(ble_db_discovery_evt_t * p_evt)
 
       p_characteristic = &(p_evt->params.discovered_db.charateristics[i]);
 
-      if ((p_characteristic->characteristic.uuid.uuid == BLE_SCS_UUID_DATA_DN_CHAR)
-            &&
-            (p_characteristic->characteristic.uuid.type == m_base_uuid_type))
-      {
-        // blink_led(3);
+      // if ((p_characteristic->characteristic.uuid.uuid == BLE_SCS_UUID_DATA_DN_CHAR)
+      //       &&
+      //       (p_characteristic->characteristic.uuid.type == m_base_uuid_type))
+      // {
+      //   snprintf(msg, 64, "\n******** c_h - FOUND DOWN_CHAR CHAR. i %d\n", i);
+      //   debugHelper(msg);
+      //
+      //   // Characteristic found. Store the information needed and break.
+      //   p_client->dn_char_index = i;
+      //   is_valid_srv_found = true;
+      // }
+      // else if ((p_characteristic->characteristic.uuid.uuid == BLE_SCS_UUID_DATA_UP_CHAR)
+			//       &&
+		  //       (p_characteristic->characteristic.uuid.type == m_base_uuid_type))
+			// {
+      //     snprintf(msg, 64, "\n******** c_h - FOUND UP_CHAR CHAR\n");
+      //     debugHelper(msg);
+      //
+      //   // Characteristic found. Store the information needed and break.
+			// 	p_client->up_char_index = i;
+			// 	is_valid_srv_found = true;
+			// }
 
-        // snprintf(msg, 64, "******** c_h - db_discovery_e_h - DN_CHAR");
-        // debugHelper(msg);
+
+
+      if ((p_characteristic->characteristic.uuid.uuid == BLE_UUID_BLOOD_PRESSURE_MEASUREMENT_CHAR) // WEIGHT READING
+            &&
+            (p_characteristic->characteristic.uuid.type == BLE_UUID_TYPE_BLE))
+      {
+        snprintf(msg, 64, "\n******** c_h - FOUND 0x2A35 CHAR. i %d\n", i);
+        debugHelper(msg);
 
         // Characteristic found. Store the information needed and break.
         p_client->dn_char_index = i;
         is_valid_srv_found = true;
       }
-      else if ((p_characteristic->characteristic.uuid.uuid == BLE_SCS_UUID_DATA_UP_CHAR)
-			      &&
-		        (p_characteristic->characteristic.uuid.type == m_base_uuid_type))
-			{
-        // blink_led(3);
-
-        // snprintf(msg, 64, "******** c_h - db_discovery_e_h - UP_CHAR");
-        // debugHelper(msg);
-
-        // Characteristic found. Store the information needed and break.
-				p_client->up_char_index = i;
-				is_valid_srv_found = true;
-			}
-      // else if ((p_characteristic->characteristic.uuid.uuid == BLE_WGT_UUID_DATA_UP_CHAR) // WEIGHT READING
-      //       &&
-      //       (p_characteristic->characteristic.uuid.type == m_base_uuid_type))
-      // else if (p_characteristic->characteristic.uuid.uuid == BLE_WGT_UUID_DATA_UP_CHAR) // WEIGHT READING
-      // {
-      //   // blink_led(5);
-      //   // snprintf(msg, 64, "******** c_h - db_discovery_e_h - BP_CHAR");
-      //   // debugHelper(msg);
-      //
-      //   // Characteristic found. Store the information needed and break.
-      //   p_client->up_char_index = i;
-      //   is_valid_srv_found = true;
-      // }
     }
   }
 
@@ -384,16 +395,26 @@ static void db_discovery_evt_handler(ble_db_discovery_evt_t * p_evt)
  */
 static void on_evt_write_rsp(ble_evt_t * p_ble_evt, client_t * p_client)
 {
+    char msg[64];
+    snprintf(msg, 64, "\n******** on_evt_write_rsp A");
+    debugHelper(msg);
+
     if ((p_client != NULL) && (p_client->state == STATE_NOTIF_ENABLE))
     {
         if (p_ble_evt->evt.gattc_evt.params.write_rsp.handle !=
             p_client->srv_db.services[0].charateristics[p_client->dn_char_index].cccd_handle)
         {
+            snprintf(msg, 64, "\n******** on_evt_write_rsp B");
+            debugHelper(msg);
+
             // Got response from unexpected handle.
             p_client->state = STATE_ERROR;
         }
         else
         {
+            snprintf(msg, 64, "\n******** on_evt_write_rsp C");
+            debugHelper(msg);
+
             p_client->state = STATE_RUNNING;
             p_client->peripheralConnected = true;
         }
@@ -407,73 +428,71 @@ static void on_evt_write_rsp(ble_evt_t * p_ble_evt, client_t * p_client)
  */
 static void on_evt_hvx(ble_evt_t * p_ble_evt, client_t * p_client, uint32_t index)
 {
-  // char msg[64];
-
-  // snprintf(msg, 64, "******** c_h - on_evt_hvx - A");
-  // debugHelper(msg);
+  char msg[64];
+  snprintf(msg, 64, "\n********  on_evt_hvx\n");
+  debugHelper(msg);
 
   if ((p_client != NULL) && (p_client->state == STATE_RUNNING))
   {
-    // snprintf(msg, 64, "******** c_h - on_evt_hvx - B");
-    // debugHelper(msg);
-
     if (p_ble_evt->evt.gattc_evt.params.hvx.handle ==
           p_client->srv_db.services[0].charateristics[p_client->dn_char_index].characteristic.handle_value)
     {
-        // snprintf(msg, 64, "******** c_h - on_evt_hvx - C");
-        // debugHelper(msg);
 
-        ble_gattc_evt_hvx_t * p_evt_write = &p_ble_evt->evt.gattc_evt.params.hvx;
+        // ble_gattc_evt_hvx_t * p_evt_write = &p_ble_evt->evt.gattc_evt.params.hvx;
 
-        if (p_evt_write->len == 2 && p_evt_write->data[0] == 0x03 && p_evt_write->data[1] == 0x04)
-        {
-		      if ( p_client->peripheralConnected && !p_client->socketedParticle)
-          {
-            p_client->socketedParticle = true;
+        snprintf(msg, 64, "\n********  on_evt_hvx IN\n");
+        debugHelper(msg);
 
-            //this is a hack-fx. v1.0.47 of bluz FW didn't properly fill out the connection field of the BLE header, so we have to do it here
-            p_client->ble_read_buffer[SPI_HEADER_SIZE+1] = ((SPI_BUS_CONNECT << 4) & 0xF0) | (p_client->ble_read_buffer[1] & 0x0F);
-
-            // snprintf(msg, 64, "******** c_h - on_evt_hvx - SPI_BUS_CONNECT");
-            // debugHelper(msg);
-
-            spi_slave_set_tx_buffer(p_client, SPI_BUS_CONNECT, p_client->ble_read_buffer, p_client->ble_read_buffer_length);
-		      }
-          else
-          {
-            // unsigned long lenVal = (unsigned long)p_client->ble_read_buffer_length;
-            //
-            // snprintf(msg, 64, "\n******** c_h - on_evt_hvx - SPI_BUS_DATA len = %lu\n ", lenVal);
-            // debugHelper(msg);
-            //
-            // if (lenVal == 6) {
-            //   snprintf(msg, 64, "\n******** c_h - on_evt_hvx - THIS IS THE DATA");
-            //   debugHelper(msg);
-            //
-            //   snprintf(msg, 64, "********START-ble_read_buffer");
-            //   debugHelper(msg);
-            //
-            //   debugHexHelper(p_client->ble_read_buffer, p_client->ble_read_buffer_length);
-            //
-            //   snprintf(msg, 64, "********END-ble_read_buffer");
-            //   debugHelper(msg);
-            // }
-
-            //got the EOS characters, write this to UART
-		       spi_slave_set_tx_buffer(p_client, SPI_BUS_DATA, p_client->ble_read_buffer, p_client->ble_read_buffer_length);
-          }
-
-          p_client->ble_read_buffer_length = SPI_HEADER_SIZE;
-			}
-      else
-      {
-        // snprintf(msg, 64, "******** c_h - on_evt_hvx - else hit");
-        // debugHelper(msg);
-
-        memcpy(p_client->ble_read_buffer+p_client->ble_read_buffer_length, p_evt_write->data, p_evt_write->len);
-
-        p_client->ble_read_buffer_length += p_evt_write->len;
-			}
+      //   if (p_evt_write->len == 2 && p_evt_write->data[0] == 0x03 && p_evt_write->data[1] == 0x04)
+      //   {
+		  //     if ( p_client->peripheralConnected && !p_client->socketedParticle)
+      //     {
+      //       p_client->socketedParticle = true;
+      //
+      //       //this is a hack-fx. v1.0.47 of bluz FW didn't properly fill out the connection field of the BLE header, so we have to do it here
+      //       p_client->ble_read_buffer[SPI_HEADER_SIZE+1] = ((SPI_BUS_CONNECT << 4) & 0xF0) | (p_client->ble_read_buffer[1] & 0x0F);
+      //
+      //       // snprintf(msg, 64, "******** c_h - on_evt_hvx - SPI_BUS_CONNECT");
+      //       // debugHelper(msg);
+      //
+      //       spi_slave_set_tx_buffer(p_client, SPI_BUS_CONNECT, p_client->ble_read_buffer, p_client->ble_read_buffer_length);
+		  //     }
+      //     else
+      //     {
+      //       unsigned long lenVal = (unsigned long)p_client->ble_read_buffer_length;
+      //       //
+      //       // snprintf(msg, 64, "\n******** c_h - on_evt_hvx - SPI_BUS_DATA len = %lu\n ", lenVal);
+      //       // debugHelper(msg);
+      //       //
+      //       if (lenVal == 6) {
+      //         snprintf(msg, 64, "\n******** THIS IS THE DATA");
+      //         debugHelper(msg);
+      //
+      //         // snprintf(msg, 64, "********START-ble_read_buffer");
+      //         // debugHelper(msg);
+      //         //
+      //         // debugHexHelper(p_client->ble_read_buffer, p_client->ble_read_buffer_length);
+      //         //
+      //         // snprintf(msg, 64, "********END-ble_read_buffer");
+      //         // debugHelper(msg);
+      //       }
+      //
+      //       //got the EOS characters, write this to UART
+		  //      spi_slave_set_tx_buffer(p_client, SPI_BUS_DATA, p_client->ble_read_buffer, p_client->ble_read_buffer_length);
+      //     }
+      //
+      //     p_client->ble_read_buffer_length = SPI_HEADER_SIZE;
+			// }
+      // else
+      // {
+      //   // snprintf(msg, 64, "******** c_h - on_evt_hvx - else hit");
+      //   // debugHelper(msg);
+      //
+      //   memcpy(p_client->ble_read_buffer+p_client->ble_read_buffer_length, p_evt_write->data, p_evt_write->len);
+      //
+      //   p_client->ble_read_buffer_length += p_evt_write->len;
+			// }
+      //
     }
   }
 }
@@ -518,8 +537,6 @@ ret_code_t client_handling_dm_event_handler(const dm_handle_t    * p_handle,
 
 void client_handling_ble_evt_handler(ble_evt_t * p_ble_evt)
 {
-
-
     client_t * p_client = NULL;
     uint32_t index = client_find(p_ble_evt->evt.gattc_evt.conn_handle);
     if (index != MAX_CLIENTS)
@@ -527,21 +544,33 @@ void client_handling_ble_evt_handler(ble_evt_t * p_ble_evt)
        p_client = &m_client[index];
     }
 
-    // char msg[64];
+    char msg[64];
     // snprintf(msg, 64, "\n******** c_h - c_h_b_evt_handler - %lu \n", (unsigned long)index);
     // debugHelper(msg);
-    //
-    // snprintf(msg, 64, "\n******** c_h - c_h_b_evt_handler - id %d \n", p_ble_evt->header.evt_id);
-    // debugHelper(msg);
+
+    snprintf(msg, 64, "\n******** c_h_b_evt_handler - id %d \n", p_ble_evt->header.evt_id);
+    debugHelper(msg);
 
     switch (p_ble_evt->header.evt_id)
     {
-      case BLE_GATTC_EVT_WRITE_RSP: //7
+      case BLE_GATTC_EVT_WRITE_RSP:
+        snprintf(msg, 64, "\n******** BLE_GATTC_EVT_WRITE_RSP\\n");
+        debugHelper(msg);
+
         if ((p_ble_evt->evt.gattc_evt.gatt_status == BLE_GATT_STATUS_ATTERR_INSUF_AUTHENTICATION) ||
             (p_ble_evt->evt.gattc_evt.gatt_status == BLE_GATT_STATUS_ATTERR_INSUF_ENCRYPTION))
         {
-            uint32_t err_code = dm_security_setup_req(&p_client->handle);
-            APP_ERROR_CHECK(err_code);
+            // uint32_t err_code = dm_security_setup_req(&p_client->handle);
+            // APP_ERROR_CHECK(err_code);
+            //
+            // snprintf(msg, 64, "\n******** ENCRYPTION = %lu\n ", (unsigned long)err_code);
+            // debugHelper(msg);
+            //
+            // snprintf(msg, 64, "\n******** NRF_ERROR_INVALID_STATE A = %lu\n ", (unsigned long)NRF_ERROR_INVALID_STATE);
+            // debugHelper(msg);
+            //
+            // snprintf(msg, 64, "\n******** NRF_ERROR_INVALID_STATE B = %d\n ", NRF_ERROR_INVALID_STATE);
+            // debugHelper(msg);
 
         }
         on_evt_write_rsp(p_ble_evt, p_client);
@@ -551,11 +580,11 @@ void client_handling_ble_evt_handler(ble_evt_t * p_ble_evt)
       	on_write(p_client, p_ble_evt);
       	break;
 
-      case BLE_GATTC_EVT_HVX: //8
+      case BLE_GATTC_EVT_HVX:
         on_evt_hvx(p_ble_evt, p_client, index);
         break;
 
-      case BLE_GATTC_EVT_TIMEOUT: //9
+      case BLE_GATTC_EVT_TIMEOUT:
         on_evt_timeout(p_ble_evt, p_client);
         break;
 
@@ -600,10 +629,10 @@ void client_handling_init(void (*b)(uint8_t *m_tx_buf, uint16_t size))
 	uint32_t err_code;
   uint32_t i;
 
-  ble_uuid128_t base_uuid = MULTILINK_PERIPHERAL_BASE_UUID;
-
-  err_code = sd_ble_uuid_vs_add(&base_uuid, &m_base_uuid_type);
-  APP_ERROR_CHECK(err_code);
+  // ble_uuid128_t base_uuid = MULTILINK_PERIPHERAL_BASE_UUID;
+  //
+  // err_code = sd_ble_uuid_vs_add(&base_uuid, &m_base_uuid_type);
+  // APP_ERROR_CHECK(err_code);
 
   for (i = 0; i < MAX_CLIENTS; i++)
   {
@@ -614,37 +643,35 @@ void client_handling_init(void (*b)(uint8_t *m_tx_buf, uint16_t size))
 
   db_discovery_init();
 
-  // char msg[64];
+  char msg[64];
 
-  // Register with discovery module for the discovery of the service.
-  ble_uuid_t uuid;
-
-  uuid.type = m_base_uuid_type;
-  uuid.uuid = BLE_SCS_UUID_SERVICE;
-
-  err_code = ble_db_discovery_evt_register(&uuid,
-                                             db_discovery_evt_handler);
-
-  APP_ERROR_CHECK(err_code);
-
-  // snprintf(msg, 64, "******** c_h - c_h_init - dk err_code = %lu %d\n ", (unsigned long)err_code, (unsigned int) uuid.uuid);
-  // debugHelper(msg);
-
-  // // Register with discovery module for the discovery of the WEIGHT READING service.
-  // ble_uuid_t uuid_two;
+  // //Register with discovery module for the discovery of the service.
+  // ble_uuid_t uuid;
   //
-  // uuid_two.type = m_base_uuid_type;
-  // uuid_two.uuid = BLE_WGT_UUID_SERVICE;
+  // uuid.type = m_base_uuid_type;
+  // uuid.uuid = BLE_SCS_UUID_SERVICE;
   //
-  // err_code = ble_db_discovery_evt_register(&uuid_two,
-  //                                           db_discovery_evt_handler);
+  // err_code = ble_db_discovery_evt_register(&uuid,
+  //                                          db_discovery_evt_handler);
   //
   // APP_ERROR_CHECK(err_code);
   //
-  // snprintf(msg, 64, "******** c_h - c_h_init - bp err_code = %lu %d\n ", (unsigned long)err_code, (unsigned int) uuid_two.uuid);
+  // snprintf(msg, 64, "\n******** client_handling_init = %lu %d\n ", (unsigned long)err_code, (unsigned int) uuid.type);
   // debugHelper(msg);
 
+  // Register with discovery module for the discovery of the WEIGHT READING service.
+  ble_uuid_t uuid;
 
+  uuid.type = BLE_UUID_TYPE_BLE;
+  uuid.uuid = BLE_UUID_BLOOD_PRESSURE_SERVICE;
+
+  err_code = ble_db_discovery_evt_register(&uuid,
+                                            db_discovery_evt_handler);
+
+  APP_ERROR_CHECK(err_code);
+
+  snprintf(msg, 64, "\n******** client_handling_init = %lu %d\n ", (unsigned long)err_code, (unsigned int) uuid.type);
+  debugHelper(msg);
 
 }
 
@@ -671,6 +698,14 @@ uint32_t client_handling_create(const dm_handle_t * p_handle, uint16_t conn_hand
     service_discover(&m_client[p_handle->connection_id]);
 
     return NRF_SUCCESS;
+
+  //   m_client[p_handle->connection_id].state              = STATE_SERVICE_DISC;
+  //   m_client[p_handle->connection_id].srv_db.conn_handle = conn_handle;
+  //              m_client_count++;
+  //  m_client[p_handle->connection_id].handle             = (*p_handle);
+  //  service_discover(&m_client[p_handle->connection_id]);
+   //
+  //  return NRF_SUCCESS;
 }
 
 /**@brief Function for freeing up a client by setting its state to idle.

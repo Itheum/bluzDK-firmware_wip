@@ -19,7 +19,7 @@
  *
  * @details  This module contains the APIs and types exposed by the DB Discovery module. These APIs
  *           and types can be used by the application to perform discovery of a service and its
- *           characteristics at the peer server. This module can also be used to discover the 
+ *           characteristics at the peer server. This module can also be used to discover the
  *           desired services in multiple remote devices.
  *           A typical use of this library is described in the figure below.
  *           @image html db_discovery.jpg
@@ -93,7 +93,7 @@ typedef struct
  */
 typedef struct
 {
-    ble_uuid_t               srv_uuid;                                           /**< UUID of the service. */    
+    ble_uuid_t               srv_uuid;                                           /**< UUID of the service. */
     uint8_t                  char_count;                                         /**< Number of characteristics present in the service. */
     ble_db_discovery_char_t  charateristics[BLE_DB_DISCOVERY_MAX_CHAR_PER_SRV];  /**< Array of information related to the characteristics present in the service. */
     ble_gattc_handle_range_t handle_range;                                       /**< Service Handle Range. */
@@ -101,7 +101,7 @@ typedef struct
 
 /**@brief   Structure for holding the information related to the GATT database at the server.
  *
- * @details This module identifies a remote database. Use one instance of this structure per 
+ * @details This module identifies a remote database. Use one instance of this structure per
  *          connection.
  *
  * @warning This structure must be zero-initialized.
@@ -174,51 +174,51 @@ uint32_t ble_db_discovery_close(void);
 
 /**@brief Function for registering with the DB Discovery module.
  *
- * @details   The application can use this function to inform which service it is interested in 
+ * @details   The application can use this function to inform which service it is interested in
  *            discovering at the server.
  *
  * @param[in] p_uuid             Pointer to the UUID of the service to be discovered at the server.
- * @param[in] evt_handler        Event handler to be called by the DB discovery module when any event 
+ * @param[in] evt_handler        Event handler to be called by the DB discovery module when any event
  *                               related to discovery of the registered service occurs.
  *
- * @note      The total number of services that can be discovered by this module is @ref 
- *            BLE_DB_DISCOVERY_MAX_SRV. This effectively means that the maximum number of 
- *            registrations possible is equal to the @ref BLE_DB_DISCOVERY_MAX_SRV. 
+ * @note      The total number of services that can be discovered by this module is @ref
+ *            BLE_DB_DISCOVERY_MAX_SRV. This effectively means that the maximum number of
+ *            registrations possible is equal to the @ref BLE_DB_DISCOVERY_MAX_SRV.
  *
  * @retval    NRF_SUCCESS               Operation success.
  * @retval    NRF_ERROR_NULL            When a NULL pointer is passed as input.
- * @retval    NRF_ERROR_INVALID_STATE   If this function is called without calling the 
+ * @retval    NRF_ERROR_INVALID_STATE   If this function is called without calling the
  *                                      @ref ble_db_discovery_init.
- * @retval    NRF_ERROR_NOT_SUPPORTED   The maximum number of registrations allowed by this module 
+ * @retval    NRF_ERROR_NOT_SUPPORTED   The maximum number of registrations allowed by this module
  *                                      has been reached.
  */
 uint32_t ble_db_discovery_evt_register(const ble_uuid_t * const             p_uuid,
                                        const ble_db_discovery_evt_handler_t evt_handler);
 
-                                       
+
 /**@brief Function for starting the discovery of the GATT database at the server.
  *
  * @warning p_db_discovery structure must be zero-initialized.
  *
  * @param[out] p_db_discovery    Pointer to the DB Discovery structure.
- * @param[in]  conn_handle       The handle of the connection for which the discovery should be 
+ * @param[in]  conn_handle       The handle of the connection for which the discovery should be
  *                               started.
  *
  * @retval    NRF_SUCCESS               Operation success.
  * @retval    NRF_ERROR_NULL            When a NULL pointer is passed as input.
- * @retval    NRF_ERROR_INVALID_STATE   If this function is called without calling the 
- *                                      @ref ble_db_discovery_init, or without calling 
+ * @retval    NRF_ERROR_INVALID_STATE   If this function is called without calling the
+ *                                      @ref ble_db_discovery_init, or without calling
  *                                      @ref ble_db_discovery_evt_register.
- * @retval    NRF_ERROR_BUSY            If a discovery is already in progress for the current 
+ * @retval    NRF_ERROR_BUSY            If a discovery is already in progress for the current
  *                                      connection.
  *
- * @return                              This API propagates the error code returned by the 
+ * @return                              This API propagates the error code returned by the
  *                                      SoftDevice API @ref sd_ble_gattc_primary_services_discover.
  */
 uint32_t ble_db_discovery_start(ble_db_discovery_t * const p_db_discovery,
                                 uint16_t                   conn_handle);
 
-                                
+
 /**@brief Function for handling the Application's BLE Stack events.
  *
  * @param[in,out] p_db_discovery Pointer to the DB Discovery structure.
