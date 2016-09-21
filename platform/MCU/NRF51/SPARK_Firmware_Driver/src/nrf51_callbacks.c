@@ -118,6 +118,8 @@ void wdt_event_handler(void)
     //NOTE: The max amount of time we can spend in WDT interrupt is two cycles of 32768[Hz] clock - after that, reset occurs
 }
 
+int printCount = 1;
+
 /**@brief Function for handling the Application's BLE Stack events.
  *
  * @param[in]   p_ble_evt   Bluetooth stack event.
@@ -192,13 +194,8 @@ void on_ble_evt(ble_evt_t * p_ble_evt)
 
       case BLE_GAP_EVT_ADV_REPORT:
       {
-				// snprintf(msg, 64, "******** B n_c - its BLE_GAP_EVT_ADV_REPORT");
-				// debugHelper(msg);
-
 				data_t adv_data;
         data_t type_data;
-
-        //            uint8_t service_uuid[] = {0xB2, 0x2D, 0x14, 0xAA, 0xB3, 0x9F, 0x41, 0xED, 0xB1, 0x77, 0xFF, 0x38, 0x23, 0x02, 0x1E, 0x87};
 
         // Initialize advertisement report for parsing.
         adv_data.p_data = p_ble_evt->evt.gap_evt.params.adv_report.data;
@@ -208,11 +205,8 @@ void on_ble_evt(ble_evt_t * p_ble_evt)
                                     &adv_data,
                                     &type_data);
 
-				if (err_code == NRF_SUCCESS)
-        {
-					// snprintf(msg, 64, "******** C n_c - adv_report_parse complete_local pass");
-					// debugHelper(msg);
-				}
+				// snprintf(msg, 64, "******** full name 0x%04X", (int)err_code);
+				// debugHelper(msg);
 
 
 				if (err_code != NRF_SUCCESS)
@@ -222,18 +216,16 @@ void on_ble_evt(ble_evt_t * p_ble_evt)
                                         &adv_data,
                                         &type_data);
 
-						// if (err_code == NRF_SUCCESS)
-		        // {
-						// 	debugHelper(msg);
-						// }
+																				// snprintf(msg, 64, "******** short name 0x%04X", (int)err_code);
+																				// debugHelper(msg);
 				}
 
 
 
-				// if (err_code == NRF_ERROR_NOT_FOUND)
-				// {
-				// 	blink_led(5);
-				// }
+				if (err_code == NRF_ERROR_NOT_FOUND)
+				{
+					//blink_led(5);
+				}
 
         //            err_code = adv_report_parse(BLE_GAP_AD_TYPE_128BIT_SERVICE_UUID_COMPLETE,
         //                                                  &adv_data,
@@ -241,6 +233,13 @@ void on_ble_evt(ble_evt_t * p_ble_evt)
 
         // Verify if short or complete name matches target.
         char* target = get_gateway_target_name();
+
+				// if (printCount < 10)
+				// {
+				// 	snprintf(msg, 64, "******** name %s", type_data.p_data);
+				// 	debugHelper(msg);
+				// 	printCount++;
+				// }
 
         if ((err_code == NRF_SUCCESS) &&
               (0 == memcmp(target,type_data.p_data,type_data.data_len)) &&
@@ -250,7 +249,8 @@ void on_ble_evt(ble_evt_t * p_ble_evt)
         {
           err_code = sd_ble_gap_scan_stop();
           state = BLE_OFF;
-          if (err_code != NRF_SUCCESS)
+
+					if (err_code != NRF_SUCCESS)
           {
           }
 
@@ -260,6 +260,9 @@ void on_ble_evt(ble_evt_t * p_ble_evt)
                                             peer_addr,
                                             &m_scan_param,
                                             &connection_param);
+
+					snprintf(msg, 64, "\n******** DK Found\n");
+			    debugHelper(msg);
 
 					if (err_code != NRF_SUCCESS)
           {
@@ -275,7 +278,7 @@ void on_ble_evt(ble_evt_t * p_ble_evt)
           target = "A&D_UA-651BLE_5FAB91"; // home
           // target = "A&D_UA-651BLE_01109E";
 
-          if ((err_code == NRF_SUCCESS) &&
+        if ((err_code == NRF_SUCCESS) &&
 					     (0 == memcmp(target,type_data.p_data,type_data.data_len)) &&
                //                	isCloudConnected &&
                !isCloudUpdating &&
@@ -283,9 +286,13 @@ void on_ble_evt(ble_evt_t * p_ble_evt)
           {
             err_code = sd_ble_gap_scan_stop();
             state = BLE_OFF;
-            if (err_code != NRF_SUCCESS)
+
+						if (err_code != NRF_SUCCESS)
             {
             }
+
+						snprintf(msg, 64, "\n******** BP Found\n");
+				    debugHelper(msg);
 
             ble_gap_conn_params_t connection_param = get_gw_conn_params();   // Assuming that BluzDK conn params are OK for WGTSCALE
 		        lastConnectionTime = system_millis();
@@ -431,8 +438,8 @@ uint32_t device_manager_evt_handler(dm_handle_t const    * p_handle,
                                            ret_code_t           event_result)
 {
 		char msg[64];
-		snprintf(msg, 64, "\n******** device_manager_evt_handler\n");
-		debugHelper(msg);
+		// snprintf(msg, 64, "\n******** device_manager_evt_handler\n");
+		// debugHelper(msg);
 
 		APP_ERROR_CHECK(event_result);
 
@@ -443,6 +450,8 @@ uint32_t device_manager_evt_handler(dm_handle_t const    * p_handle,
 						snprintf(msg, 64, "\n******** A\n");
 						debugHelper(msg);
             m_bonded_peer_handle = (*p_handle);
+
+						// setSecurityTestflags(1, p_handle);
             break;
 #if PLATFORM_ID==269
         uint32_t  err_code;
@@ -450,7 +459,7 @@ uint32_t device_manager_evt_handler(dm_handle_t const    * p_handle,
             err_code = client_handling_create(p_handle, p_event->event_param.p_gap_param->conn_handle);
             APP_ERROR_CHECK(err_code);
 
-						snprintf(msg, 64, "\n******** B = %lu\n", (unsigned long)err_code);
+						snprintf(msg, 64, "\n******** B = 0x%08X\n", (int)err_code);
 						debugHelper(msg);
 
             m_peer_count++;
@@ -481,22 +490,32 @@ uint32_t device_manager_evt_handler(dm_handle_t const    * p_handle,
             // Slave securtiy request received from peer, if from a non bonded device,
             // initiate security setup, else, wait for encryption to complete.
             err_code = dm_security_setup_req(&handle);
-            APP_ERROR_CHECK(err_code);
+
+						snprintf(msg, 64, "\n********DM_EVT_SECURITY_SETUP err_code = 0x%08X\n", (int)err_code);
+				  	debugHelper(msg);
+
+						APP_ERROR_CHECK(err_code);
             break;
         }
-        case DM_EVT_LINK_SECURED:
-						snprintf(msg, 64, "\n******** E\n");
-						debugHelper(msg);
-            break;
+        // case DM_EVT_LINK_SECURED:
+				// 		snprintf(msg, 64, "\n******** E\n");
+				// 		debugHelper(msg);
+        //     break;
         case DM_EVT_DEVICE_CONTEXT_STORED:
 						snprintf(msg, 64, "\n******** F\n");
 						debugHelper(msg);
             APP_ERROR_CHECK(event_result);
+
+						// setSecurityTestflags(2, p_handle);
             break;
         case DM_EVT_DEVICE_CONTEXT_DELETED:
 						snprintf(msg, 64, "\n******** G\n");
 						debugHelper(msg);
             APP_ERROR_CHECK(event_result);
+            break;
+        case DM_EVT_SECURITY_SETUP_REFRESH:
+						snprintf(msg, 64, "\n******** H\n");
+						debugHelper(msg);
             break;
 #endif
         default:

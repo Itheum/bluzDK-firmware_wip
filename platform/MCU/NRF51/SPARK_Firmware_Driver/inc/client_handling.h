@@ -87,6 +87,9 @@ void connected_peripherals(uint8_t *values);
 void debugHelper(char *str);
 void debugHexHelper(unsigned char *data, unsigned short len);
 
+void setSecurityTestflags(unsigned int flag, const dm_handle_t    * p_handle);
+void read_batt_level(const dm_handle_t    * p_handle);
+
 
 #endif // CLIENT_HANDLING_H__
 

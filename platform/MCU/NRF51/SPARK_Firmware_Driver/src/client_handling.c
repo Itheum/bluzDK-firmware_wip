@@ -35,6 +35,11 @@
 
 bool waitForTxComplete = true;
 
+bool flagLinkSecured = false;
+bool flagSecuritySetupComplete = false;
+bool flagDeviceContextStored = false;
+
+
 /**@brief Client states. */
 typedef enum
 {
@@ -72,7 +77,6 @@ static void blink_led(int count)
 		nrf_gpio_pin_clear(GATEWAY_NOTIFICATION_LED);
 		nrf_delay_us(100000);
 	}
-	// nrf_delay_us(300000);
 	nrf_delay_us(100000);
 }
 
@@ -134,7 +138,57 @@ void debugHexHelper(unsigned char *data, unsigned short len)
   buffer[bufLen + 5] = '\0'; // new
 
   spi_slave_set_tx_buffer(&p_client, SPI_BUS_DATA, buffer, bufLen+5);
+
+  // msg[0] = 0x01;
+  // msg[1] = 0x02;
+  // msg[2] = 0x03;
+  // debugHexHelper(msg, 3);
 }
+
+void setSecurityTestflags(unsigned int flag, const dm_handle_t * p_handle) {
+  char msg[64];
+
+  if (flag == 1) {
+    snprintf(msg, 64, "\n******** setSecurityTestflags flagSecuritySetupComplete\n");
+    debugHelper(msg);
+
+    flagSecuritySetupComplete = true;
+  }
+  else if (flag == 2) {
+    snprintf(msg, 64, "\n******** setSecurityTestflags flagDeviceContextStored\n");
+    debugHelper(msg);
+
+    flagDeviceContextStored = true;
+  }
+
+  read_batt_level(p_handle);
+}
+
+void read_batt_level(const dm_handle_t * p_handle)
+{
+    char msg[64];
+    client_t * p_client = &m_client[p_handle->connection_id];
+
+    // if (flagLinkSecured && flagSecuritySetupComplete)
+    // {
+    //   flagLinkSecured = false;
+    //   flagSecuritySetupComplete = false;
+    //   flagDeviceContextStored = false;
+
+      uint32_t err_code;
+
+      dm_security_status_t encryStatus;
+      err_code = dm_security_status_req(p_handle, &encryStatus);
+      snprintf(msg, 64, "\n******** read_batt_level encryStatus 0x%08X %X\n", (int)err_code, encryStatus);
+      debugHelper(msg);
+
+      err_code = sd_ble_gattc_read(p_client->srv_db.conn_handle, p_client->srv_db.services[0].charateristics[p_client->dn_char_index].characteristic.handle_value, 0);
+      snprintf(msg, 64, "\n******** read_batt_level handle is 0x%08X %X\n", (int)err_code, p_client->srv_db.services[0].charateristics[p_client->dn_char_index].characteristic.handle_value);
+      debugHelper(msg);
+
+    // }
+}
+
 
 /**@brief Function for finding client context information based on handle.
  *
@@ -186,8 +240,8 @@ static void notif_enable(client_t * p_client)
 
     p_client->state = STATE_NOTIF_ENABLE;
 
-    // buf[0] = BLE_GATT_HVX_NOTIFICATION;
-    buf[0] = BLE_GATT_HVX_INDICATION;
+    buf[0] = BLE_GATT_HVX_NOTIFICATION;
+    // buf[0] = BLE_GATT_HVX_INDICATION;
     buf[1] = 0;
 
     write_params.write_op = BLE_GATT_OP_WRITE_REQ;
@@ -200,7 +254,7 @@ static void notif_enable(client_t * p_client)
     APP_ERROR_CHECK(err_code);
 
     char msg[64];
-    snprintf(msg, 64, "\n******** notif_enable done - err_code = %lu, hd %X\n", (unsigned long)err_code, p_client->srv_db.services[0].charateristics[p_client->dn_char_index].cccd_handle);
+    snprintf(msg, 64, "\n******** notif_enable done - err_code = 0x%08X, hd %X\n", (int)err_code, p_client->srv_db.services[0].charateristics[p_client->dn_char_index].cccd_handle);
     debugHelper(msg);
 
     snprintf(msg, 64, "\n******** char.uuid. %X\n", p_client->srv_db.services[0].charateristics[p_client->dn_char_index].characteristic.uuid.uuid);
@@ -301,7 +355,7 @@ static void db_discovery_evt_handler(ble_db_discovery_evt_t * p_evt)
   // Find the client using the connection handle.
   client_t * p_client;
   uint32_t   index;
-  bool       is_valid_srv_found = false;
+  // bool       is_valid_srv_found = false;
 
   index = client_find(p_evt->conn_handle);
   p_client = &m_client[index];
@@ -313,22 +367,14 @@ static void db_discovery_evt_handler(ble_db_discovery_evt_t * p_evt)
     snprintf(msg, 64, "\n******** db_discovery_evt_handler %d\n", p_evt->params.discovered_db.char_count);
     debugHelper(msg);
 
-    // snprintf(msg, 64, "\n******** T %d %d %d %d %d %d %d \n", BLE_GATTC_EVT_WRITE_RSP, BLE_GATTS_EVT_WRITE, BLE_GATTC_EVT_HVX, BLE_GATTC_EVT_TIMEOUT, BLE_EVT_TX_COMPLETE, BLE_GAP_EVT_DISCONNECTED, BLE_GAP_EVT_CONNECTED);
-    // snprintf(msg, 64, "\n******** T %d %d %d %d %d %d %d %d %d %d %d \n", BLE_GATTC_EVT_PRIM_SRVC_DISC_RSP, BLE_GATTC_EVT_REL_DISC_RSP, BLE_GATTC_EVT_CHAR_DISC_RSP, BLE_GATTC_EVT_DESC_DISC_RSP, BLE_GATTC_EVT_CHAR_VAL_BY_UUID_READ_RSP, BLE_GATTC_EVT_READ_RSP, BLE_GATTC_EVT_CHAR_VALS_READ_RSP, BLE_GATTS_EVT_RW_AUTHORIZE_REQUEST, BLE_GATTS_EVT_SYS_ATTR_MISSING, BLE_GATTS_EVT_HVC, BLE_GATTS_EVT_TIMEOUT);
+    // snprintf(msg, 64, "\n******** T %d %d \n", DM_EVT_DEVICE_CONTEXT_LOADED, DM_EVT_SECURITY_SETUP_COMPLETE);
     // debugHelper(msg);
     //
-    // snprintf(msg, 64, "\n******** T %d %d %d %d %d %d %d %d %d %d %d %d \n", SD_BLE_GATTS_SERVICE_ADD, SD_BLE_GATTS_INCLUDE_ADD, SD_BLE_GATTS_CHARACTERISTIC_ADD, SD_BLE_GATTS_DESCRIPTOR_ADD, SD_BLE_GATTS_VALUE_SET, SD_BLE_GATTS_VALUE_GET, SD_BLE_GATTS_HVX, SD_BLE_GATTS_SERVICE_CHANGED, SD_BLE_GATTS_RW_AUTHORIZE_REPLY, SD_BLE_GATTS_SYS_ATTR_SET, SD_BLE_GATTS_SYS_ATTR_GET, BLE_GATTS_EVT_SC_CONFIRM);
+    // snprintf(msg, 64, "\n******** T 0x%04X 0x%04X \n", (int)DM_EVT_DEVICE_CONTEXT_LOADED, (int)DM_EVT_SECURITY_SETUP_COMPLETE);
     // debugHelper(msg);
-    //
-    // snprintf(msg, 64, "\n******** BLE_UUID_BLOOD_PRESSURE_MEASUREMENT_CHAR. %X\n",BLE_UUID_BLOOD_PRESSURE_MEASUREMENT_CHAR);
+
+    // snprintf(msg, 64, "\n******** T %d \n", DEVICE_MANAGER_MAX_BONDS);
     // debugHelper(msg);
-    // snprintf(msg, 64, "******** We are in disc_comp type %d.", p_evt->evt_type);
-    // debugHelper(msg);
-    //
-    // msg[0] = 0x01;
-    // msg[1] = 0x02;
-    // msg[2] = 0x03;
-    // debugHexHelper(msg, 3);
 
     uint8_t i;
 
@@ -361,32 +407,57 @@ static void db_discovery_evt_handler(ble_db_discovery_evt_t * p_evt)
 			// 	is_valid_srv_found = true;
 			// }
 
+      // if ((p_characteristic->characteristic.uuid.uuid == BLE_UUID_BLOOD_PRESSURE_MEASUREMENT_CHAR) // WEIGHT READING
+      //       &&
+      //       (p_characteristic->characteristic.uuid.type == BLE_UUID_TYPE_BLE))
+      // {
+      //   snprintf(msg, 64, "\n******** c_h - FOUND 0x2A35 CHAR. i %d\n", i);
+      //   debugHelper(msg);
+      //
+      //   // Characteristic found. Store the information needed and break.
+      //   p_client->dn_char_index = i;
+      //   // is_valid_srv_found = true;
+      //
+      //   // read the CCCD
+      //   uint32_t err_code = sd_ble_gattc_read(p_client->srv_db.conn_handle, p_client->srv_db.services[0].charateristics[p_client->dn_char_index].cccd_handle, 0);
+      //   snprintf(msg, 64, "\n******** readcccd handle is 0x%08X %X\n", (int)err_code, p_client->srv_db.services[0].charateristics[p_client->dn_char_index].cccd_handle);
+      //   debugHelper(msg);
+      // }
 
-
-      if ((p_characteristic->characteristic.uuid.uuid == BLE_UUID_BLOOD_PRESSURE_MEASUREMENT_CHAR) // WEIGHT READING
+      if ((p_characteristic->characteristic.uuid.uuid == BLE_UUID_BATTERY_LEVEL_CHAR) // WEIGHT READING
             &&
             (p_characteristic->characteristic.uuid.type == BLE_UUID_TYPE_BLE))
       {
-        snprintf(msg, 64, "\n******** c_h - FOUND 0x2A35 CHAR. i %d\n", i);
+        snprintf(msg, 64, "\n******** c_h - FOUND 0x2A19 CHAR. i %d\n", i);
         debugHelper(msg);
 
         // Characteristic found. Store the information needed and break.
         p_client->dn_char_index = i;
-        is_valid_srv_found = true;
+
+        // snprintf(msg, 64, "\n******** its handle is %X\n", p_client->srv_db.services[0].charateristics[p_client->dn_char_index].characteristic.handle_value);
+        // debugHelper(msg);
+
+        // uint32_t err_code = sd_ble_gattc_read(p_client->srv_db.conn_handle, p_client->srv_db.services[0].charateristics[p_client->dn_char_index].characteristic.handle_value, 0);
+        // snprintf(msg, 64, "\n******** read_batt_level handle is 0x%08X %X\n", (int)err_code, p_client->srv_db.services[0].charateristics[p_client->dn_char_index].characteristic.handle_value);
+        // debugHelper(msg);
+
       }
     }
   }
 
-  if (is_valid_srv_found)
-  {
-      // Enable notification.
-      notif_enable(p_client);
-  }
-  else
-  {
-      p_client->state = STATE_ERROR;
-  }
+  // if (is_valid_srv_found)
+  // {
+  //     // Enable notification.
+  //     notif_enable(p_client);
+  // }
+  // else
+  // {
+  //     p_client->state = STATE_ERROR;
+  // }
 }
+
+
+
 
 
 /**@brief Function for setting client to the running state once write response is received.
@@ -516,16 +587,43 @@ ret_code_t client_handling_dm_event_handler(const dm_handle_t    * p_handle,
                                               const dm_event_t     * p_event,
                                               const ret_code_t     event_result)
 {
-    client_t * p_client = &m_client[p_handle->connection_id];
+    // client_t * p_client = &m_client[p_handle->connection_id];
+    char msg[64];
 
     switch (p_event->event_id)
     {
+      case DM_EVT_DEVICE_CONTEXT_LOADED: // Fall through.
+      case DM_EVT_SECURITY_SETUP_COMPLETE:
+        snprintf(msg, 64, "\n******** Ab 0x%04X result 0x%04X\n", (int)p_event->event_id, (int)event_result);
+        debugHelper(msg);
+
+        // if (event_result == NRF_SUCCESS)
+        // {
+          // uint32_t err_code = dm_security_setup_req(&p_client->handle);
+          // APP_ERROR_CHECK(err_code);
+        //   //
+        //   // snprintf(msg, 64, "\n******** auth_encr_set, er_code = 0x%08X\n ", (int)err_code);
+        //   // debugHelper(msg);
+        // }
+
+          break;
        case DM_EVT_LINK_SECURED:
-           // Attempt configuring CCCD now that bonding is established.
-           if (event_result == NRF_SUCCESS)
-           {
-               notif_enable(p_client);
-           }
+
+          //  // Attempt configuring CCCD now that bonding is established.
+          //  if (event_result == NRF_SUCCESS)
+          //  {
+          //      //notif_enable(p_client);
+           //
+
+               snprintf(msg, 64, "\n******** link secured\n");
+               debugHelper(msg);
+
+              //  flagLinkSecured = true;
+               read_batt_level(p_handle);
+           //
+          //      snprintf(msg, 64, "\n******** DM_EVT_LINK_SECURED in CH\n");
+          //      debugHelper(msg);
+          //  }
            break;
        default:
            break;
@@ -545,32 +643,29 @@ void client_handling_ble_evt_handler(ble_evt_t * p_ble_evt)
     }
 
     char msg[64];
-    // snprintf(msg, 64, "\n******** c_h - c_h_b_evt_handler - %lu \n", (unsigned long)index);
+    // snprintf(msg, 64, "\n******** c_h_b_evt_handler - id %d \n", p_ble_evt->header.evt_id);
     // debugHelper(msg);
-
-    snprintf(msg, 64, "\n******** c_h_b_evt_handler - id %d \n", p_ble_evt->header.evt_id);
-    debugHelper(msg);
 
     switch (p_ble_evt->header.evt_id)
     {
       case BLE_GATTC_EVT_WRITE_RSP:
-        snprintf(msg, 64, "\n******** BLE_GATTC_EVT_WRITE_RSP\\n");
+        snprintf(msg, 64, "\n******** BLE_GATTC_EVT_WRITE_RSP \n");
         debugHelper(msg);
 
         if ((p_ble_evt->evt.gattc_evt.gatt_status == BLE_GATT_STATUS_ATTERR_INSUF_AUTHENTICATION) ||
             (p_ble_evt->evt.gattc_evt.gatt_status == BLE_GATT_STATUS_ATTERR_INSUF_ENCRYPTION))
         {
-            // uint32_t err_code = dm_security_setup_req(&p_client->handle);
-            // APP_ERROR_CHECK(err_code);
-            //
-            // snprintf(msg, 64, "\n******** ENCRYPTION = %lu\n ", (unsigned long)err_code);
-            // debugHelper(msg);
-            //
+            uint32_t err_code = dm_security_setup_req(&p_client->handle);
+            APP_ERROR_CHECK(err_code);
+
+            snprintf(msg, 64, "\n******** auth_encr_set, er_code = 0x%08X\n ", (int)err_code);
+            debugHelper(msg);
+
             // snprintf(msg, 64, "\n******** NRF_ERROR_INVALID_STATE A = %lu\n ", (unsigned long)NRF_ERROR_INVALID_STATE);
             // debugHelper(msg);
-            //
-            // snprintf(msg, 64, "\n******** NRF_ERROR_INVALID_STATE B = %d\n ", NRF_ERROR_INVALID_STATE);
-            // debugHelper(msg);
+
+            snprintf(msg, 64, "\n******** gatt_status %d %d %d \n", BLE_GATT_STATUS_ATTERR_INSUF_AUTHENTICATION, BLE_GATT_STATUS_ATTERR_INSUF_ENCRYPTION, p_ble_evt->evt.gattc_evt.gatt_status);
+            debugHelper(msg);
 
         }
         on_evt_write_rsp(p_ble_evt, p_client);
@@ -597,6 +692,44 @@ void client_handling_ble_evt_handler(ble_evt_t * p_ble_evt)
 
       case BLE_GAP_EVT_CONNECTED:
          break;
+
+       case BLE_GATTC_EVT_READ_RSP:
+
+          //  p_ble_evt->evt.gattc_evt.params.read_rsp.data,
+          //  p_ble_evt->evt.gattc_evt.params.read_rsp.len);
+          snprintf(msg, 64, "\n******** BLE_GATTC_EVT_READ_RSP \n");
+          debugHelper(msg);
+
+           if ((p_ble_evt->evt.gattc_evt.gatt_status == BLE_GATT_STATUS_ATTERR_INSUF_AUTHENTICATION) ||
+               (p_ble_evt->evt.gattc_evt.gatt_status == BLE_GATT_STATUS_ATTERR_INSUF_ENCRYPTION))
+           {
+               snprintf(msg, 64, "\n******** fail, status = %d\n ", p_ble_evt->evt.gattc_evt.gatt_status);
+               debugHelper(msg);
+
+              //  uint32_t err_code = dm_security_setup_req(&p_client->handle);
+              //  APP_ERROR_CHECK(err_code);
+
+              //  snprintf(msg, 64, "\n******** BLE_GATTC_EVT_READ_RSP status, er_code  = 0x%08X\n", (int)err_code);
+              //  debugHelper(msg);
+           }
+           else {
+             snprintf(msg, 64, "\n******** success, len = %d\n ", (int)p_ble_evt->evt.gattc_evt.params.read_rsp.len);
+             debugHelper(msg);
+
+             dm_security_status_t encryStatus;
+             uint32_t err_code = dm_security_status_req(&p_client->handle, &encryStatus);
+             snprintf(msg, 64, "\n******** success encryStatus 0x%08X %X\n", (int)err_code, encryStatus);
+             debugHelper(msg);
+
+             snprintf(msg, 64, "\n******** success, a data = %d\n ", (int)p_ble_evt->evt.gattc_evt.params.read_rsp.data[0]);
+             debugHelper(msg);
+
+            //  snprintf(msg, 64, "\n******** success, data = %d, %d\n ", p_ble_evt->evt.gattc_evt.params.read_rsp.data[0], p_ble_evt->evt.gattc_evt.params.read_rsp.data[1]);
+            //  debugHelper(msg);
+
+           }
+
+           break;
 
       default:
           break;
@@ -659,18 +792,32 @@ void client_handling_init(void (*b)(uint8_t *m_tx_buf, uint16_t size))
   // snprintf(msg, 64, "\n******** client_handling_init = %lu %d\n ", (unsigned long)err_code, (unsigned int) uuid.type);
   // debugHelper(msg);
 
+  // // Register with discovery module for the discovery of the WEIGHT READING service.
+  // ble_uuid_t uuid;
+  //
+  // uuid.type = BLE_UUID_TYPE_BLE;
+  // uuid.uuid = BLE_UUID_BLOOD_PRESSURE_SERVICE;
+  //
+  // err_code = ble_db_discovery_evt_register(&uuid,
+  //                                           db_discovery_evt_handler);
+  //
+  // APP_ERROR_CHECK(err_code);
+  //
+  // snprintf(msg, 64, "\n******** g client_handling_init = 0x%08X %d\n ", (int) err_code, uuid.type);
+  // debugHelper(msg);
+
   // Register with discovery module for the discovery of the WEIGHT READING service.
   ble_uuid_t uuid;
 
   uuid.type = BLE_UUID_TYPE_BLE;
-  uuid.uuid = BLE_UUID_BLOOD_PRESSURE_SERVICE;
+  uuid.uuid = BLE_UUID_BATTERY_SERVICE;
 
   err_code = ble_db_discovery_evt_register(&uuid,
                                             db_discovery_evt_handler);
 
   APP_ERROR_CHECK(err_code);
 
-  snprintf(msg, 64, "\n******** client_handling_init = %lu %d\n ", (unsigned long)err_code, (unsigned int) uuid.type);
+  snprintf(msg, 64, "\n******** E client_handling_init = 0x%08X %d\n ", (int) err_code, uuid.type);
   debugHelper(msg);
 
 }
@@ -698,14 +845,6 @@ uint32_t client_handling_create(const dm_handle_t * p_handle, uint16_t conn_hand
     service_discover(&m_client[p_handle->connection_id]);
 
     return NRF_SUCCESS;
-
-  //   m_client[p_handle->connection_id].state              = STATE_SERVICE_DISC;
-  //   m_client[p_handle->connection_id].srv_db.conn_handle = conn_handle;
-  //              m_client_count++;
-  //  m_client[p_handle->connection_id].handle             = (*p_handle);
-  //  service_discover(&m_client[p_handle->connection_id]);
-   //
-  //  return NRF_SUCCESS;
 }
 
 /**@brief Function for freeing up a client by setting its state to idle.

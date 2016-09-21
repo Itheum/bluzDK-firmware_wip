@@ -95,23 +95,23 @@ uint32_t system_micros(void)
  */
 void app_error_handler(uint32_t error_code, uint32_t line_num, const uint8_t * p_file_name)
 {
-    blink_led(5);
+    // blink_led(5);
 
-    // DEBUG("Hit an app error of code %d", error_code);
-    // DEBUG("Error happened on line number %d in file %s", line_num, p_file_name);
-    //
+    DEBUG("Hit an app error of code %d", error_code);
+    DEBUG("Error happened on line number %d in file %s", line_num, p_file_name);
+
     char msg[64];
-  	snprintf(msg, 64, "Hit an app error of code = %lu\n", (unsigned long)error_code);
+  	snprintf(msg, 64, "\n^^^^^^^^ Hit an app error of code = 0x%08X\n", (int)error_code);
   	debugHelper(msg);
-  	snprintf(msg, 64, "Error happened on line number %lu in file %s", (unsigned long)line_num, p_file_name);
-  	debugHelper(msg);
-    //
+  	// snprintf(msg, 64, "Error happened on line number %lu in file %s", (unsigned long)line_num, p_file_name);
+  	// debugHelper(msg);
+
     // LED_SetRGBColor(RGB_COLOR_RED);
-    //
+		//
     // nrf_drv_wdt_channel_feed(m_channel_id);
     // //this will stop all timers, so we need to feed the WDT here
     // for (int i=0; i<APP_TIMER_MAX_TIMERS; i++) app_timer_stop(i);
-    //
+		//
     // nrf_gpio_pin_set(0);
     // for (int count = 0; count < 2; count++) {
     //     //SOS Call
@@ -149,8 +149,8 @@ void app_error_handler(uint32_t error_code, uint32_t line_num, const uint8_t * p
     //     nrf_delay_ms(2000);
     //     nrf_drv_wdt_channel_feed(m_channel_id);
     // }
-    //
-    //
+		//
+		//
     // // On assert, the system can only recover with a reset.
     // NVIC_SystemReset();
 }
@@ -367,30 +367,49 @@ void device_manager_init(void)
     uint32_t                err_code;
     dm_init_param_t         init_data;
     dm_application_param_t  register_param;
-    bool                	bonds_delete = false;
+    bool                		bonds_delete = false;
 
     // Initialize peer device handle.
     err_code = dm_handle_initialize(&m_bonded_peer_handle);
     APP_ERROR_CHECK(err_code);
-    //blink(1);
-    // Initialize persistent storage module.
+
+		//blink(1);
+
+		// char msg[64];
+		//
+  	// snprintf(msg, 64, "device_manager_init - A - code = 0x%08X\n", (int)err_code);
+  	// debugHelper(msg);
+
+		// Initialize persistent storage module.
     err_code = pstorage_init();
     APP_ERROR_CHECK(err_code);
-    //blink(2);
-    // Clear all bonded centrals if the "delete all bonds" button is pushed.
+
+		// snprintf(msg, 64, "device_manager_init - B - code = 0x%08X\n", (int)err_code);
+  	// debugHelper(msg);
+
+		//blink(2);
+
+		// Clear all bonded centrals if the "delete all bonds" button is pushed.
     //SO STUPID! Youmust hand the index of the button from the Init call data structure, not just the pin number
     //It is 8 by the way
 //    err_code = app_button_is_pushed(8, &bonds_delete);
 //    APP_ERROR_CHECK(err_code);
-    //    blink(3);
+
+		//    blink(3);
     init_data.clear_persistent_data = bonds_delete;
 
     err_code = dm_init(&init_data);
     APP_ERROR_CHECK(err_code);
-    //blink(4);
-    memset(&register_param.sec_param, 0, sizeof(ble_gap_sec_params_t));
+
+		// snprintf(msg, 64, "device_manager_init - C - code = 0x%08X\n", (int)err_code);
+  	// debugHelper(msg);
+
+		//blink(4);
+
+		memset(&register_param.sec_param, 0, sizeof(ble_gap_sec_params_t));
 
     register_param.sec_param.bond         = SEC_PARAM_BOND;
+    // register_param.sec_param.bond         = 0;
     register_param.sec_param.mitm         = SEC_PARAM_MITM;
     register_param.sec_param.io_caps      = SEC_PARAM_IO_CAPABILITIES;
     register_param.sec_param.oob          = SEC_PARAM_OOB;
@@ -406,11 +425,19 @@ void device_manager_init(void)
 #if PLATFORM_ID==269
     //bluz-gw
     register_param.service_type           = DM_PROTOCOL_CNTXT_GATT_CLI_ID;
+
+		// snprintf(msg, 64, "device_manager_init - D \n");
+  	// debugHelper(msg);
 #endif
 
     err_code = dm_register(&m_app_handle, &register_param);
+
     //blink(5);
-    APP_ERROR_CHECK(err_code);
+
+		// snprintf(msg, 64, "device_manager_init - E - code = 0x%08X\n", (int)err_code);
+  	// debugHelper(msg);
+
+		APP_ERROR_CHECK(err_code);
 }
 
 char* DEVICE_NAME = "Bluz DK";
@@ -532,6 +559,13 @@ void ble_stack_init(void)
 
     // Initialize the SoftDevice handler module.
     SOFTDEVICE_HANDLER_INIT(NRF_CLOCK_LFCLKSRC_XTAL_20_PPM, false);
+
+		// upgrade to support BLE_GAP_ADDR_TYPE_RANDOM_PRIVATE_RESOLVABLE as per https://devzone.nordicsemi.com/question/94600/ble_gap_sec_status_auth_req-event_result-in-dm_evt_security_setup_complete/?answer=95512#post-id-95512
+		ble_gap_addr_t local_address;
+		local_address.addr_type = BLE_GAP_ADDR_TYPE_RANDOM_PRIVATE_RESOLVABLE;
+
+		err_code = sd_ble_gap_address_set(BLE_GAP_ADDR_CYCLE_MODE_AUTO, &local_address);
+		APP_ERROR_CHECK(err_code);
 
     // Enable BLE stack
 
