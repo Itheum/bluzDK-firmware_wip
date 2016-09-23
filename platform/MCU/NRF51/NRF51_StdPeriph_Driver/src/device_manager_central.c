@@ -2546,7 +2546,7 @@ void dm_ble_evt_handler(ble_evt_t * p_ble_evt)
     uint32_t    err_code;
     uint32_t    index;
     // uint32_t    device_index;
-    uint32_t    device_index = -1;
+    uint32_t    device_index = 0;
     bool        notify_app          = false;
     bool        start_sec_procedure = false;
     dm_handle_t handle;
@@ -2691,6 +2691,9 @@ void dm_ble_evt_handler(ble_evt_t * p_ble_evt)
             //both states are permitted, however, connection handle must be known.
             DM_LOG("[DM]: Disconnect Reason 0x%04X\r\n",
                    p_ble_evt->evt.gap_evt.params.disconnected.reason);
+
+           snprintf(msg, 64, "\n******** BLE_GAP_EVT_DISCONNECTED, reason 0x%04X\n", p_ble_evt->evt.gap_evt.params.disconnected.reason);
+           debugHelper(msg);
 
             m_connection_table[index].state &= (~STATE_CONNECTED);
 
@@ -2865,6 +2868,7 @@ void dm_ble_evt_handler(ble_evt_t * p_ble_evt)
           snprintf(msg, 64, "\n******** BLE_GAP_EVT_CONN_SEC_UPDATE %d %d 0x%04X\n", p_ble_evt->evt.gap_evt.params.conn_sec_update.conn_sec.sec_mode.lv, p_ble_evt->evt.gap_evt.params.conn_sec_update.conn_sec.sec_mode.sm, (m_connection_table[index].state & STATE_BONDED));
           debugHelper(msg);
 
+          uint16_t skip = 0;
 
             DM_LOG("[DM]: >> BLE_GAP_EVT_CONN_SEC_UPDATE, Mode 0x%02X, Level 0x%02X\r\n",
                    p_ble_evt->evt.gap_evt.params.conn_sec_update.conn_sec.sec_mode.sm,
@@ -2872,7 +2876,8 @@ void dm_ble_evt_handler(ble_evt_t * p_ble_evt)
 
             if ((p_ble_evt->evt.gap_evt.params.conn_sec_update.conn_sec.sec_mode.lv == 1) &&
                 (p_ble_evt->evt.gap_evt.params.conn_sec_update.conn_sec.sec_mode.sm == 1) &&
-                ((m_connection_table[index].state & STATE_BONDED) == STATE_BONDED))
+                // ((m_connection_table[index].state & STATE_BONDED) == STATE_BONDED))
+                ((m_connection_table[index].state & STATE_BONDED) == STATE_BONDED) && (skip == 0))
             {
                 //Lost bond case, generate a security refresh event!
                 memset(m_gatts_table[index].attributes, 0, DM_GATT_SERVER_ATTR_MAX_SIZE);

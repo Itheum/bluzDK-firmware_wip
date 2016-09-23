@@ -38,6 +38,7 @@ bool waitForTxComplete = true;
 bool flagLinkSecured = false;
 bool flagSecuritySetupComplete = false;
 bool flagDeviceContextStored = false;
+bool flagCharFound = false;
 
 
 /**@brief Client states. */
@@ -182,9 +183,11 @@ void read_batt_level(const dm_handle_t * p_handle)
       snprintf(msg, 64, "\n******** read_batt_level encryStatus 0x%08X %X\n", (int)err_code, encryStatus);
       debugHelper(msg);
 
-      err_code = sd_ble_gattc_read(p_client->srv_db.conn_handle, p_client->srv_db.services[0].charateristics[p_client->dn_char_index].characteristic.handle_value, 0);
-      snprintf(msg, 64, "\n******** read_batt_level handle is 0x%08X %X\n", (int)err_code, p_client->srv_db.services[0].charateristics[p_client->dn_char_index].characteristic.handle_value);
-      debugHelper(msg);
+      if (flagCharFound) {
+        err_code = sd_ble_gattc_read(p_client->srv_db.conn_handle, p_client->srv_db.services[0].charateristics[p_client->dn_char_index].characteristic.handle_value, 0);
+        snprintf(msg, 64, "\n******** read_batt_level handle is 0x%08X %X\n", (int)err_code, p_client->srv_db.services[0].charateristics[p_client->dn_char_index].characteristic.handle_value);
+        debugHelper(msg);
+      }
 
     // }
 }
@@ -359,7 +362,7 @@ static void db_discovery_evt_handler(ble_db_discovery_evt_t * p_evt)
 
   index = client_find(p_evt->conn_handle);
   p_client = &m_client[index];
-  //blink(1);
+  //blink(1);client_t * p_client = &m_client[p_handle->connection_id];
 
   if (p_evt->evt_type == BLE_DB_DISCOVERY_COMPLETE)
   {
@@ -433,12 +436,14 @@ static void db_discovery_evt_handler(ble_db_discovery_evt_t * p_evt)
 
         // Characteristic found. Store the information needed and break.
         p_client->dn_char_index = i;
+        flagCharFound = true;
+        read_batt_level(&p_client->handle);
 
         // snprintf(msg, 64, "\n******** its handle is %X\n", p_client->srv_db.services[0].charateristics[p_client->dn_char_index].characteristic.handle_value);
         // debugHelper(msg);
 
         // uint32_t err_code = sd_ble_gattc_read(p_client->srv_db.conn_handle, p_client->srv_db.services[0].charateristics[p_client->dn_char_index].characteristic.handle_value, 0);
-        // snprintf(msg, 64, "\n******** read_batt_level handle is 0x%08X %X\n", (int)err_code, p_client->srv_db.services[0].charateristics[p_client->dn_char_index].characteristic.handle_value);
+        // snprintf(msg, 64, "\n******** read_batt_level_alt handle is 0x%08X %X\n", (int)err_code, p_client->srv_db.services[0].charateristics[p_client->dn_char_index].characteristic.handle_value);
         // debugHelper(msg);
 
       }
@@ -817,7 +822,7 @@ void client_handling_init(void (*b)(uint8_t *m_tx_buf, uint16_t size))
 
   APP_ERROR_CHECK(err_code);
 
-  snprintf(msg, 64, "\n******** E client_handling_init = 0x%08X %d\n ", (int) err_code, uuid.type);
+  snprintf(msg, 64, "\n******** G client_handling_init = 0x%08X %d\n ", (int) err_code, uuid.type);
   debugHelper(msg);
 
 }
