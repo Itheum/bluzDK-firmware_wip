@@ -425,6 +425,8 @@ void device_manager_init(void)
 #if PLATFORM_ID==269
     //bluz-gw
     register_param.service_type           = DM_PROTOCOL_CNTXT_GATT_CLI_ID;
+		register_param.sec_param.kdist_periph.enc = 1;
+    register_param.sec_param.kdist_periph.id  = 1;
 
 		// snprintf(msg, 64, "device_manager_init - D \n");
   	// debugHelper(msg);

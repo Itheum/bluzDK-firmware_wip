@@ -1380,7 +1380,10 @@ uint32_t initiate_security_request(const dm_handle_t * p_handle)
 
     char msg[64];
     // snprintf(msg, 64, "\n******** sec_param %d, %d, %d, %d, %d, %d, %d \n", m_application_table[p_handle->appl_id].sec_param.bond, m_application_table[p_handle->appl_id].sec_param.mitm, m_application_table[p_handle->appl_id].sec_param.io_caps, m_application_table[p_handle->appl_id].sec_param.oob, m_application_table[p_handle->appl_id].sec_param.min_key_size, m_application_table[p_handle->appl_id].sec_param.max_key_size, m_application_table[p_handle->appl_id].sec_param.timeout);
-    snprintf(msg, 64, "\n******** sec_param %d \n", m_application_table[p_handle->appl_id].sec_param.bond);
+    snprintf(msg, 64, "\n******** sec_params %d \n", m_application_table[p_handle->appl_id].sec_param.bond);
+    debugHelper(msg);
+
+    snprintf(msg, 64, "\n******** B enc_id_sign %d %d %d \n", m_application_table[p_handle->appl_id].sec_param.kdist_periph.enc, m_application_table[p_handle->appl_id].sec_param.kdist_periph.id, m_application_table[p_handle->appl_id].sec_param.kdist_periph.sign);
     debugHelper(msg);
 
     err_code = sd_ble_gap_authenticate(m_connection_table[p_handle->connection_id].conn_handle,
@@ -2742,6 +2745,9 @@ void dm_ble_evt_handler(ble_evt_t * p_ble_evt)
                    p_ble_evt->evt.gap_evt.params.sec_params_request.peer_params.kdist_periph.sign,
                    p_ble_evt->evt.gap_evt.params.sec_params_request.peer_params.bond);
 
+           snprintf(msg, 64, "\n******** A enc_id_sign_bond %d %d %d %d \n", p_ble_evt->evt.gap_evt.params.sec_params_request.peer_params.kdist_periph.enc, p_ble_evt->evt.gap_evt.params.sec_params_request.peer_params.kdist_periph.id, p_ble_evt->evt.gap_evt.params.sec_params_request.peer_params.kdist_periph.sign, p_ble_evt->evt.gap_evt.params.sec_params_request.peer_params.bond);
+           debugHelper(msg);
+
             keys_exchanged.keys_central.p_enc_key  = NULL;
             keys_exchanged.keys_central.p_id_key   = NULL;
             keys_exchanged.keys_central.p_sign_key = NULL;
@@ -2868,7 +2874,7 @@ void dm_ble_evt_handler(ble_evt_t * p_ble_evt)
           snprintf(msg, 64, "\n******** BLE_GAP_EVT_CONN_SEC_UPDATE %d %d 0x%04X\n", p_ble_evt->evt.gap_evt.params.conn_sec_update.conn_sec.sec_mode.lv, p_ble_evt->evt.gap_evt.params.conn_sec_update.conn_sec.sec_mode.sm, (m_connection_table[index].state & STATE_BONDED));
           debugHelper(msg);
 
-          uint16_t skip = 0;
+          // uint16_t skip = 0;
 
             DM_LOG("[DM]: >> BLE_GAP_EVT_CONN_SEC_UPDATE, Mode 0x%02X, Level 0x%02X\r\n",
                    p_ble_evt->evt.gap_evt.params.conn_sec_update.conn_sec.sec_mode.sm,
@@ -2876,8 +2882,8 @@ void dm_ble_evt_handler(ble_evt_t * p_ble_evt)
 
             if ((p_ble_evt->evt.gap_evt.params.conn_sec_update.conn_sec.sec_mode.lv == 1) &&
                 (p_ble_evt->evt.gap_evt.params.conn_sec_update.conn_sec.sec_mode.sm == 1) &&
-                // ((m_connection_table[index].state & STATE_BONDED) == STATE_BONDED))
-                ((m_connection_table[index].state & STATE_BONDED) == STATE_BONDED) && (skip == 0))
+                ((m_connection_table[index].state & STATE_BONDED) == STATE_BONDED))
+                // ((m_connection_table[index].state & STATE_BONDED) == STATE_BONDED) && (skip == 0))
             {
                 //Lost bond case, generate a security refresh event!
                 memset(m_gatts_table[index].attributes, 0, DM_GATT_SERVER_ATTR_MAX_SIZE);
